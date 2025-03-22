@@ -23,17 +23,20 @@ rl.on("close", () => {
   }
   let seatingPlan = initSeatingPlan();
   const reservedLine = lines.shift()?.trim();
-  const reservedSeats = reservedLine?.split(" ");
-  seatingPlan = handleInitialReservations(seatingPlan, reservedSeats ?? []);
+  if (reservedLine?.length || 0 > 0) {
+    const reservedSeats = reservedLine?.split(" ");
+    seatingPlan = handleInitialReservations(seatingPlan, reservedSeats ?? []);
+  }
   const requests = lines.map((line) => parseInt(line.trim()));
-
-  try {
-    for (const amount of requests) {
+  const output: string[] = [];
+  for (const amount of requests) {
+    try {
       const bestRange = findBestSeatRange(seatingPlan, amount);
       reserveRange(seatingPlan, bestRange);
-      console.log(getSeatRangeInStringFormat(bestRange));
+      output.push(getSeatRangeInStringFormat(bestRange));
+    } catch (e) {
+      output.push("Not Available");
     }
-  } catch (e) {
-    console.error("Not Available");
   }
+  console.log(output.join("\n"));
 });
