@@ -81,6 +81,21 @@ export const reserveSeat = (
   return seatingPlan;
 };
 
+export const reserveRange = (
+  seatingPlan: SeatingPlan,
+  range: SeatRange,
+): SeatingPlan => {
+  if (range.start[0] > range.end[0] || range.start[1] > range.end[1]) {
+    throw new Error("Invalid range");
+  }
+  for (let i = range.start[0]; i <= range.end[0]; i++) {
+    for (let j = range.start[1]; j <= range.end[1]; j++) {
+      seatingPlan = reserveSeat(seatingPlan, [i, j]);
+    }
+  }
+  return seatingPlan;
+};
+
 export const handleInitialReservations = (
   seatingPlan: SeatingPlan,
   initialReservations: string[],

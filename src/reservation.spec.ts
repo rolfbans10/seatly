@@ -9,6 +9,7 @@ import {
   initSeatingPlan,
   isSeatAvailable,
   parseSeatLocation,
+  reserveRange,
   reserveSeat,
   SeatingPlan,
   SeatLocation,
@@ -97,6 +98,36 @@ describe("reservation", () => {
       const seatingPlan = initSeatingPlan({ rows: 3, columns: 11 });
       const location: SeatLocation = [0, 12];
       expect(() => reserveSeat(seatingPlan, location)).toThrow();
+    });
+  });
+  describe("reserveRange", () => {
+    it("reserves a range of seats", () => {
+      const seatingPlan = initSeatingPlan({ rows: 3, columns: 11 });
+      const range: SeatRange = {
+        start: [0, 1],
+        end: [0, 5],
+      };
+      expect(isSeatAvailable(seatingPlan, range.start)).toBe(true);
+      expect(isSeatAvailable(seatingPlan, range.end)).toBe(true);
+      const actual = reserveRange(seatingPlan, range);
+      expect(isSeatAvailable(actual, range.start)).toBe(false);
+      expect(isSeatAvailable(actual, range.end)).toBe(false);
+    });
+    it("throws an error if the range is invalid", () => {
+      const seatingPlan = initSeatingPlan({ rows: 3, columns: 11 });
+      const range: SeatRange = {
+        start: [0, 1],
+        end: [0, 0],
+      };
+      expect(() => reserveRange(seatingPlan, range)).toThrow();
+    });
+    it("throws an error if the range is invalid 2", () => {
+      const seatingPlan = initSeatingPlan({ rows: 3, columns: 11 });
+      const range: SeatRange = {
+        start: [0, 1],
+        end: [0, 12],
+      };
+      expect(() => reserveRange(seatingPlan, range)).toThrow();
     });
   });
   describe("handleInitialReservations", () => {
@@ -297,9 +328,10 @@ describe("reservation", () => {
           output: "R1C2 - R1C3",
           start: [0, 1],
           end: [0, 2],
-          score: 0,
+          score: 1,
         },
       ];
+      expect(seatRanges).toEqual(expected);
     });
     it("returns all possible seat ranges 3", () => {
       const seatingPlan = initSeatingPlan({ rows: 1, columns: 6 });
@@ -428,6 +460,17 @@ describe("reservation", () => {
       const range = findBestSeatRange(seatingPlan, amountOfSeats);
       expect(range.start).toEqual([1, 4]);
       expect(range.end).toEqual([1, 6]);
+    });
+
+    it("should throw when no ranges are available", () => {
+      const seatingPlan = initSeatingPlan({ rows: 1, columns: 3 });
+      reserveSeat(seatingPlan, [0, 0]);
+      reserveSeat(seatingPlan, [0, 1]);
+      reserveSeat(seatingPlan, [0, 2]);
+
+      expect(() => findBestSeatRange(seatingPlan, 2)).toThrow(
+        "No possible ranges",
+      );
     });
   });
 });
