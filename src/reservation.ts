@@ -21,7 +21,7 @@ export const initSeatingPlan = (
   config: SeatMapConfig = defaultConfig,
 ): SeatingPlan => {
   if (config.rows < 1 || config.columns < 1) {
-    throw new Error("Invalid config");
+    throw new Error("Invalid config: " + JSON.stringify(config));
   }
   const seatMap = new Map<number, boolean[]>();
   for (let row = 0; row < config.rows; row++) {
@@ -42,11 +42,11 @@ export const parseSeatLocation = (input: string): SeatLocation => {
     const row = parseInt(match[1]) - 1;
     const column = parseInt(match[2]) - 1;
     if (row < 0 || column < 0) {
-      throw new Error("Invalid input");
+      throw new Error("Invalid input: " + input.toString());
     }
     return [row, column];
   }
-  throw new Error("Invalid input");
+  throw new Error("Invalid input: " + input.toString());
 };
 
 export const isSeatAvailable = (
@@ -69,13 +69,13 @@ export const reserveSeat = (
 ): SeatingPlan => {
   const isAvailable = isSeatAvailable(seatingPlan, location);
   if (!isAvailable) {
-    throw new Error("Seat is not available");
+    throw new Error("Seat is not available: " + location.toString());
   }
   const { seatMap } = seatingPlan;
   const [rowId, columnId] = location;
   const row = seatMap.get(rowId);
   if (!row) {
-    throw new Error("Row not found");
+    throw new Error("Row not found: " + rowId.toString());
   }
   row[columnId] = true;
   return seatingPlan;
@@ -86,7 +86,7 @@ export const reserveRange = (
   range: SeatRange,
 ): SeatingPlan => {
   if (range.start[0] > range.end[0] || range.start[1] > range.end[1]) {
-    throw new Error("Invalid range");
+    throw new Error("Invalid range: " + JSON.stringify(range));
   }
   for (let i = range.start[0]; i <= range.end[0]; i++) {
     for (let j = range.start[1]; j <= range.end[1]; j++) {
@@ -105,7 +105,7 @@ export const handleInitialReservations = (
     if (isSeatAvailable(seatingPlan, location)) {
       seatingPlan = reserveSeat(seatingPlan, location);
     } else {
-      throw new Error("Seat was already reserved");
+      throw new Error("Seat was already reserved: " + location.toString());
     }
   }
   return seatingPlan;
@@ -192,7 +192,7 @@ export const findBestSeatRange = (
   );
 
   if (possibleRanges.length === 0) {
-    throw new Error("No possible ranges");
+    throw new Error("No possible ranges found: " + amountOfSeats.toString());
   }
 
   possibleRanges = possibleRanges.sort((a, b) => {
