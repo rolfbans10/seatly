@@ -1,0 +1,1 @@
+export const reserveSeat = (_input:string):boolean =>  true;
