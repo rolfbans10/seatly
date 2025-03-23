@@ -5,7 +5,7 @@ import { CliOptionsOutput, getCliOptions } from "./cli-options";
 export interface SeatingPlan {
   config: SeatMapConfig;
   seatMap: SeatMap;
-  center: SeatLocation;
+  center: TopCenterLocation;
 }
 
 type SeatMap = Map<number, boolean[]>;
@@ -20,8 +20,22 @@ const defaultConfig: SeatMapConfig = {
   columns: 11,
 };
 
-export const getTopCenterLocation = (config: SeatMapConfig): SeatLocation => {
-  return [0, Math.round(config.columns / 2) - 1];
+type TopCenterLocation =
+  | [number, number]
+  | [[number, number], [number, number]];
+
+export const getTopCenterLocation = (
+  config: SeatMapConfig,
+): TopCenterLocation => {
+  // uneven
+  if (config.columns % 2 === 1) {
+    return [0, Math.round(config.columns / 2) - 1];
+  }
+  //even
+  return [
+    [0, config.columns / 2 - 1],
+    [0, config.columns / 2],
+  ];
 };
 
 export const initSeatingPlan = (
@@ -205,12 +219,34 @@ export interface SeatRange {
 }
 
 export const getManhattanDistance = (
-  location1: SeatLocation,
+  location1: SeatLocation | TopCenterLocation,
   location2: SeatLocation,
 ): number => {
-  const [row1, column1] = location1;
-  const [row2, column2] = location2;
-  return Math.floor(Math.abs(row1 - row2) + Math.abs(column1 - column2));
+  if (Array.isArray(location1[0]) && Array.isArray(location1[1])) {
+    const [left, right] = location1;
+    const [leftRow, leftColumn] = left;
+    const [rightRow, rightColumn] = right;
+    const [destinationRow, destinationColumn] = location2;
+    if (
+      (leftRow === destinationRow && leftColumn === destinationColumn) ||
+      (rightRow === destinationRow && rightColumn === destinationColumn)
+    ) {
+      return 0;
+    }
+    const leftDistance =
+      Math.abs(leftRow - destinationRow) +
+      Math.abs(leftColumn - destinationColumn);
+    const rightDistance =
+      Math.abs(rightRow - destinationRow) +
+      Math.abs(rightColumn - destinationColumn);
+    return Math.min(leftDistance, rightDistance);
+  } else {
+    const l1 = location1 as SeatLocation;
+    const l2 = location2 as SeatLocation;
+    const [row1, column1] = l1;
+    const [row2, column2] = l2;
+    return Math.floor(Math.abs(row1 - row2) + Math.abs(column1 - column2));
+  }
 };
 
 export const getSeatRangeInStringFormat = (range: SeatRange): string => {

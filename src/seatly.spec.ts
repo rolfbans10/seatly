@@ -538,5 +538,18 @@ describe("reservation", () => {
       const output = Seatly(input, { rows: 2, columns: 5 });
       expect(output).toEqual(["R1C3", "R1C2", "R1C4", "R2C3", "R1C1", "5"]);
     });
+    it("should consider the true center", () => {
+      const input = ["", "1", "1", "1", "1", "1", "1"];
+      const output = Seatly(input, { rows: 2, columns: 4 });
+      expect(output).toEqual([
+        "R1C2",
+        "R1C3",
+        "R1C1",
+        "R1C4",
+        "R2C2",
+        "R2C3",
+        "2",
+      ]);
+    });
   });
 });
