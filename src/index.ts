@@ -1,8 +1,8 @@
 import * as readline from "node:readline";
 import { Seatly } from "./seatly";
 import logger from "./logger";
-import { cliOptions } from "./cli-options";
 import { end, start } from "./benchmark";
+import { getCliOptions } from "./cli-options";
 
 const lines: string[] = [];
 
@@ -15,7 +15,7 @@ const rl = readline.createInterface({
 rl.on("line", (line) => lines.push(line));
 rl.on("close", () => {
   const execStart = start();
-  logger.applyConfig(cliOptions);
+  logger.applyConfig(getCliOptions());
   if (lines.length < 1) {
     logger.log("No Input provided.");
     return;

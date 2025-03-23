@@ -17,12 +17,15 @@ class Logger {
 
   constructor({
     id = Logger.getRandomId(6),
-    logFile = path.resolve("out.log"),
+    logFile = "default",
     enabled = true,
     logStackTraces = false,
   }) {
     this.id = id;
-    this.logFile = logFile;
+    this.logFile =
+      logFile === "default"
+        ? path.resolve(`logs/${id}-out.log`)
+        : path.resolve(logFile);
     this.enabled = enabled;
     this.logStackTraces = logStackTraces;
   }
@@ -89,11 +92,12 @@ class Logger {
 
   private logToFile(message: string) {
     try {
-      fs.writeFileSync(this.logFile, message, { flag: "a" });
+      const dir = path.dirname(this.logFile);
+      fs.mkdirSync(dir, { recursive: true });
+
+      fs.writeFileSync(this.logFile, message, { flag: "a", encoding: "utf-8" });
     } catch (e) {
-      // fail silently on purpose and disable logger to stop trying
       this.disable();
-      throw new Error("Failed to write to log file");
     }
   }
 
