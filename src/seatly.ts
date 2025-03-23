@@ -322,6 +322,20 @@ export const findBestSeatRange = (
   return bestRange;
 };
 
+export const getAvailableSeatCount = (seatingPlan: SeatingPlan): number => {
+  const { seatMap, config } = seatingPlan;
+  let count = 0;
+  for (let rowId = 0; rowId < config.rows; rowId++) {
+    const row = seatMap.get(rowId);
+    if (!row) continue;
+    if (row.every((seat) => seat)) continue;
+    for (let columnId = 0; columnId < config.columns; columnId++) {
+      if (!row[columnId]) count++;
+    }
+  }
+  return count;
+};
+
 export const Seatly = (
   lines: string[],
   cliOverrides?: Partial<CliOptionsOutput>,
@@ -357,5 +371,6 @@ export const Seatly = (
       logger.log(e as Error);
     }
   }
+  output.push(getAvailableSeatCount(seatingPlan).toString());
   return output;
 };

@@ -17,7 +17,6 @@ import {
   SeatMapConfig,
   SeatRange,
 } from "./seatly";
-import * as sea from "node:sea";
 
 describe("reservation", () => {
   describe("initSeatingPlan", () => {
@@ -493,32 +492,51 @@ describe("reservation", () => {
     it("should reserve the first line of input correctly", () => {
       const input = ["R1C1 R2C2"];
       const output = Seatly(input);
-      expect(output).toEqual([]);
+      expect(output).toEqual(["31"]);
     });
     it("should reserve the second line of input correctly", () => {
       const input = ["R1C1", "3"];
       const output = Seatly(input);
-      expect(output).toEqual(["R1C5 - R1C7"]);
+      expect(output).toEqual(["R1C5 - R1C7", "29"]);
     });
     it("should handle Not Available reservations correctly", () => {
       const input = ["R1C1", "20"];
       const output = Seatly(input);
-      expect(output).toEqual(["Not Available"]);
+      expect(output).toEqual(["Not Available", "32"]);
+    });
+    it("should handle the standard test case", () => {
+      const input = [
+        "R1C4 R1C6 R2C3 R2C7 R3C9 R3C10",
+        "3",
+        "3",
+        "3",
+        "1",
+        "10",
+      ];
+      const output = Seatly(input);
+      expect(output).toEqual([
+        "R1C7 - R1C9",
+        "R2C4 - R2C6",
+        "R3C5 - R3C7",
+        "R1C5",
+        "Not Available",
+        "17",
+      ]);
     });
     it("should handle Invalid initial reservations correctly", () => {
       const input = ["R20C1 Rabsad AERaddkj 20R R1C1"];
       const output = Seatly(input);
-      expect(output).toEqual([]);
+      expect(output).toEqual(["33"]);
     });
     it("should choose the correct seat 1", () => {
       const input = ["", "1", "1", "1", "1"];
       const output = Seatly(input, { rows: 2, columns: 3 });
-      expect(output).toEqual(["R1C2", "R1C1", "R1C3", "R2C2"]);
+      expect(output).toEqual(["R1C2", "R1C1", "R1C3", "R2C2", "2"]);
     });
     it("should choose the correct seat 2", () => {
       const input = ["", "1", "1", "1", "1", "1"];
       const output = Seatly(input, { rows: 2, columns: 5 });
-      expect(output).toEqual(["R1C3", "R1C2", "R1C4", "R2C3", "R1C1"]);
+      expect(output).toEqual(["R1C3", "R1C2", "R1C4", "R2C3", "R1C1", "5"]);
     });
   });
 });
