@@ -13,6 +13,7 @@ import {
   reserveSeat,
   SeatingPlan,
   SeatLocation,
+  Seatly,
   SeatMapConfig,
   SeatRange,
 } from "./seatly";
@@ -488,5 +489,36 @@ describe("reservation", () => {
       );
     });
   });
-  describe("seatly", () => {});
+  describe("Seatly", () => {
+    it("should reserve the first line of input correctly", () => {
+      const input = ["R1C1 R2C2"];
+      const output = Seatly(input);
+      expect(output).toEqual([]);
+    });
+    it("should reserve the second line of input correctly", () => {
+      const input = ["R1C1", "3"];
+      const output = Seatly(input);
+      expect(output).toEqual(["R1C5 - R1C7"]);
+    });
+    it("should handle Not Available reservations correctly", () => {
+      const input = ["R1C1", "20"];
+      const output = Seatly(input);
+      expect(output).toEqual(["Not Available"]);
+    });
+    it("should handle Invalid initial reservations correctly", () => {
+      const input = ["R20C1 Rabsad AERaddkj 20R R1C1"];
+      const output = Seatly(input);
+      expect(output).toEqual([]);
+    });
+    it("should choose the correct seat 1", () => {
+      const input = ["", "1", "1", "1", "1"];
+      const output = Seatly(input, { rows: 2, columns: 3 });
+      expect(output).toEqual(["R1C2", "R1C1", "R1C3", "R2C2"]);
+    });
+    it("should choose the correct seat 2", () => {
+      const input = ["", "1", "1", "1", "1", "1"];
+      const output = Seatly(input, { rows: 2, columns: 5 });
+      expect(output).toEqual(["R1C3", "R1C2", "R1C4", "R2C3", "R1C1"]);
+    });
+  });
 });

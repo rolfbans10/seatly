@@ -11,9 +11,18 @@ interface CliOptionsInput {
   logFile?: string;
 }
 
-const args = minimist<CliOptionsInput>(process.argv.slice(2));
-if (args.help || args.h) {
-  console.log(`
+export interface CliOptionsOutput {
+  rows?: number;
+  columns?: number;
+  logFile?: string;
+}
+
+export const getCliOptions = (
+  overrides?: Partial<CliOptionsOutput>,
+): CliOptionsOutput => {
+  const args = minimist<CliOptionsInput>(process.argv.slice(2));
+  if (args.help || args.h) {
+    console.log(`
 Usage:
   node index.js [options]
 Options:
@@ -22,53 +31,51 @@ Options:
   --logFile, -l <string>     Path to the log file
   --help, -h                 Show this help message  
   `);
-  process.exit(0);
-}
+    process.exit(0);
+  }
 
-interface CliOptionsOutput {
-  rows?: number;
-  columns?: number;
-  logFile?: string;
-}
+  const output: CliOptionsOutput = {};
 
-const output: CliOptionsOutput = {};
-
-const validateNumberGreaterThanZero = (
-  input: string | undefined,
-  name: string,
-) => {
-  if (input) {
-    const number = parseInt(input, 10);
-    if (Number.isNaN(number) || number < 1) {
-      console.log(`Invalid ${name} input: ${number}`);
-      process.exit(1);
+  const validateNumberGreaterThanZero = (
+    input: string | undefined,
+    name: string,
+  ) => {
+    if (input) {
+      const number = parseInt(input, 10);
+      if (Number.isNaN(number) || number < 1) {
+        console.log(`Invalid ${name} input: ${number}`);
+        process.exit(1);
+      }
+      return number;
     }
-    return number;
+    return undefined;
+  };
+
+  if (args.rows || args.r) {
+    const inputRows = args.rows ?? args.r;
+    const resultRows = validateNumberGreaterThanZero(inputRows, "rows");
+    if (resultRows) {
+      output.rows = resultRows;
+    }
   }
-  return undefined;
+
+  if (args.columns || args.c) {
+    const inputColumns = args.columns ?? args.c;
+    const resultColumns = validateNumberGreaterThanZero(
+      inputColumns,
+      "columns",
+    );
+    if (resultColumns) {
+      output.columns = resultColumns;
+    }
+  }
+
+  if (args.logFile) {
+    if (!path.isAbsolute(args.logFile)) {
+      args.logFile = path.resolve(args.logFile);
+    }
+    output.logFile = args.logFile;
+  }
+
+  return { ...output, ...overrides };
 };
-
-if (args.rows || args.r) {
-  const inputRows = args.rows ?? args.r;
-  const resultRows = validateNumberGreaterThanZero(inputRows, "rows");
-  if (resultRows) {
-    output.rows = resultRows;
-  }
-}
-
-if (args.columns || args.c) {
-  const inputColumns = args.columns ?? args.c;
-  const resultColumns = validateNumberGreaterThanZero(inputColumns, "columns");
-  if (resultColumns) {
-    output.columns = resultColumns;
-  }
-}
-
-if (args.logFile) {
-  if (!path.isAbsolute(args.logFile)) {
-    args.logFile = path.resolve(args.logFile);
-  }
-  output.logFile = args.logFile;
-}
-
-export const cliOptions = output;

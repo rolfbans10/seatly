@@ -1,6 +1,6 @@
 import logger from "./logger";
 import { end, start } from "./benchmark";
-import { cliOptions } from "./cli-options";
+import { CliOptionsOutput, getCliOptions } from "./cli-options";
 
 export interface SeatingPlan {
   config: SeatMapConfig;
@@ -190,9 +190,6 @@ export const handleInitialReservations = (
 
   for (const reservation of initialReservations) {
     const location = parseSeatLocation(reservation, currentPlan);
-    if (!isSeatAvailable(currentPlan, location)) {
-      throw new Error("Seat was already reserved: " + location.toString());
-    }
     currentPlan = reserveSeat(currentPlan, location);
   }
 
@@ -325,8 +322,11 @@ export const findBestSeatRange = (
   return bestRange;
 };
 
-export const Seatly = (lines: string[]): string[] => {
-  const { rows, columns } = cliOptions;
+export const Seatly = (
+  lines: string[],
+  cliOverrides?: Partial<CliOptionsOutput>,
+): string[] => {
+  const { rows, columns } = getCliOptions(cliOverrides);
   let seatingPlan = initSeatingPlan({ rows, columns });
   const reservedLine = lines.shift()?.trim();
   if (reservedLine) {
