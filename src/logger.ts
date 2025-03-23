@@ -9,11 +9,11 @@ export interface LoggerOptions {
   logStackTraces?: boolean;
 }
 
-export default class Logger {
-  private readonly id: string;
-  private readonly logFile: string;
+class Logger {
+  private id: string;
+  private logFile: string;
   private enabled: boolean;
-  private readonly logStackTraces: boolean;
+  private logStackTraces: boolean;
 
   constructor({
     id = Logger.getRandomId(6),
@@ -25,12 +25,6 @@ export default class Logger {
     this.logFile = logFile;
     this.enabled = enabled;
     this.logStackTraces = logStackTraces;
-    this.log("Logger created: ", {
-      id,
-      logFile,
-      enabled,
-      logStackTraces,
-    });
   }
 
   public log(errorOrString: Error | string, data?: object) {
@@ -62,6 +56,16 @@ export default class Logger {
 
   public disable() {
     this.enabled = false;
+  }
+
+  public applyConfig(config: LoggerOptions) {
+    this.id = config.id ?? this.id;
+    this.logFile = config.logFile ?? this.logFile;
+    this.enabled = config.enabled !== undefined ? config.enabled : this.enabled;
+    this.logStackTraces =
+      config.logStackTraces !== undefined
+        ? config.logStackTraces
+        : this.logStackTraces;
   }
 
   private _log(message: string, data?: object) {
@@ -97,3 +101,6 @@ export default class Logger {
     return randomBytes(bytes).toString("hex");
   }
 }
+// singleton
+const logger = new Logger({});
+export default logger;

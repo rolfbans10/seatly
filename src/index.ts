@@ -6,8 +6,9 @@ import {
   initSeatingPlan,
   reserveRange,
 } from "./reservation";
-import Logger from "./logger";
+import logger from "./logger";
 import { cliOptions } from "./cli-options";
+import { end, start } from "./benchmark";
 
 const lines: string[] = [];
 
@@ -19,11 +20,8 @@ const rl = readline.createInterface({
 
 rl.on("line", (line) => lines.push(line));
 rl.on("close", () => {
-  const execStart = process.hrtime();
-  const logger = new Logger({
-    logStackTraces: false,
-    logFile: cliOptions.logFile,
-  });
+  const execStart = start();
+  logger.applyConfig(cliOptions);
   if (lines.length < 1) {
     logger.log("No Input provided.");
     return;
@@ -61,12 +59,8 @@ rl.on("close", () => {
   }
   console.log(output.join("\n"));
   logger.log("Result: ", output);
-  const execEnd = process.hrtime(execStart);
+  const execEnd = end(execStart);
   logger.log(
-    "Finished, execution time: " +
-      execEnd[0] +
-      "s " +
-      (execEnd[1] / 1_000_000).toFixed(0) +
-      "ms",
+    "Finished, execution time: " + execEnd[0] + "s " + execEnd[1] + "ms",
   );
 });

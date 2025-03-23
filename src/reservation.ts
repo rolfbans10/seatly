@@ -1,3 +1,6 @@
+import logger from "./logger";
+import { end, start } from "./benchmark";
+
 export interface SeatingPlan {
   config: SeatMapConfig;
   seatMap: SeatMap;
@@ -23,7 +26,6 @@ export const initSeatingPlan = (
     if (configInput.rows) config.rows = configInput.rows;
     if (configInput.columns) config.columns = configInput.columns;
   }
-  console.log("CONFIG: ", config);
   if (config.rows < 1 || config.columns < 1) {
     throw new Error(
       "Invalid config, neither rows or columns can be less than 1: " +
@@ -42,16 +44,71 @@ export const initSeatingPlan = (
 
 export type SeatLocation = [number, number];
 
-export const parseSeatLocation = (input: string): SeatLocation => {
-  const regex = /^R([0-9]+)C([0-9]+)$/;
+type SeatLocationInput = [string | undefined, string | undefined];
+
+const isDecimal = (input: string): boolean => {
+  return (
+    !Number.isNaN(parseFloat(input)) &&
+    Number.isFinite(Number(input)) &&
+    input.includes(".")
+  );
+};
+
+const isNegative = (input: string): boolean => {
+  return input.startsWith("-");
+};
+
+const validateSeatLocation = (
+  location: SeatLocationInput,
+  seatingPlan: SeatingPlan,
+): void => {
+  const [row, column] = location;
+  if (row === undefined || column === undefined) {
+    throw new Error("Invalid input: " + location.toString());
+  }
+  if (isDecimal(row) || isDecimal(column)) {
+    throw new Error(
+      "Invalid input, no decimals allowed: " + location.toString(),
+    );
+  }
+  if (isNegative(row) || isNegative(column)) {
+    throw new Error(
+      "Invalid input, no negative numbers allowed: " + location.toString(),
+    );
+  }
+
+  const rowNumber = parseInt(row, 10);
+  const columnNumber = parseInt(column, 10);
+  if (Number.isNaN(rowNumber) || Number.isNaN(columnNumber)) {
+    throw new Error("Invalid input: " + location.toString());
+  }
+
+  if (rowNumber < 1 || columnNumber < 1) {
+    throw new Error(
+      "Invalid location, location out of bounds: " + location.toString(),
+    );
+  }
+  if (
+    rowNumber > seatingPlan.config.rows ||
+    columnNumber > seatingPlan.config.columns
+  ) {
+    throw new Error(
+      "Invalid location, location out of bounds: " + location.toString(),
+    );
+  }
+};
+
+export const parseSeatLocation = (
+  input: string,
+  seatingPlan: SeatingPlan,
+): SeatLocation => {
+  const regex = /^R(-?\d+(?:\.\d+)?)C(-?\d+(?:\.\d+)?)$/;
   const match = regex.exec(input);
   if (match) {
-    const row = parseInt(match[1]) - 1;
-    const column = parseInt(match[2]) - 1;
-    if (row < 0 || column < 0) {
-      throw new Error("Invalid input: " + input.toString());
-    }
-    return [row, column];
+    validateSeatLocation([match[1], match[2]], seatingPlan);
+    const row = parseInt(match[1], 10);
+    const column = parseInt(match[2], 10);
+    return [row - 1, column - 1];
   }
   throw new Error("Invalid input: " + input.toString());
 };
@@ -62,10 +119,10 @@ export const isSeatAvailable = (
 ): boolean => {
   const { seatMap, config } = seatingPlan;
   const [row, column] = location;
-  if (
-    !(row >= 0 && row < config.rows && column >= 0 && column < config.columns)
-  ) {
-    throw new Error("Invalid location: " + location.toString());
+  if (row < 0 || row >= config.rows || column < 0 || column >= config.columns) {
+    throw new Error(
+      "Invalid location, location out of bounds: " + location.toString(),
+    );
   }
   return !seatMap.get(row)?.[column];
 };
@@ -107,7 +164,9 @@ export const handleInitialReservations = (
   seatingPlan: SeatingPlan,
   initialReservations: string[],
 ): SeatingPlan => {
-  const initialLocations = initialReservations.map(parseSeatLocation);
+  const initialLocations = initialReservations.map((reservation) =>
+    parseSeatLocation(reservation, seatingPlan),
+  );
   for (let location of initialLocations) {
     if (isSeatAvailable(seatingPlan, location)) {
       seatingPlan = reserveSeat(seatingPlan, location);
@@ -159,13 +218,16 @@ export const findAllPossibleSeatRanges = (
   seatingPlan: SeatingPlan,
   amountOfSeats: number,
 ): SeatRange[] => {
+  const begin = start();
   const topCenter = getTopCenterLocation(seatingPlan);
   const seatRanges: SeatRange[] = [];
   const { seatMap, config } = seatingPlan;
+  let ticks = 0;
   for (let rowId = 0; rowId < config.rows; rowId++) {
     const row = seatMap.get(rowId);
     if (!row) continue;
     for (let columnId = 0; columnId < config.columns; columnId++) {
+      ticks++;
       let isAvailable = true;
       for (let offset = 0; offset < amountOfSeats; offset++) {
         const column = columnId + offset;
@@ -184,10 +246,17 @@ export const findAllPossibleSeatRanges = (
   }
 
   for (let range of seatRanges) {
+    ticks++;
     range.output = getSeatRangeInStringFormat(range);
     range.center = getCenterFromRange(range);
     range.score = getManhattanDistance(topCenter, range.center);
   }
+  const finish = end(begin);
+  logger.log("findAllPossibleSeatRanges", {
+    ticks,
+    seatRangesFound: seatRanges.length,
+    time: `${finish[0]} s, ${finish[1]} ms`,
+  });
 
   return seatRanges;
 };
@@ -196,6 +265,8 @@ export const findBestSeatRange = (
   seatingPlan: SeatingPlan,
   amountOfSeats: number,
 ): SeatRange => {
+  const begin = start();
+  let ticks = 0;
   let possibleRanges: SeatRange[] = findAllPossibleSeatRanges(
     seatingPlan,
     amountOfSeats,
@@ -206,10 +277,16 @@ export const findBestSeatRange = (
   }
 
   possibleRanges = possibleRanges.sort((a, b) => {
+    ticks++;
     const scoreA = a.score !== undefined ? a.score : Number.MAX_SAFE_INTEGER;
     const scoreB = b.score !== undefined ? b.score : Number.MAX_SAFE_INTEGER;
     return scoreA - scoreB;
   });
 
+  const finish = end(begin);
+  logger.log("findBestSeatRange", {
+    ticks,
+    time: `${finish[0]} s, ${finish[1]} ms`,
+  });
   return possibleRanges[0];
 };

@@ -16,6 +16,7 @@ import {
   SeatMapConfig,
   SeatRange,
 } from "./reservation";
+import * as sea from "node:sea";
 
 describe("reservation", () => {
   describe("initSeatingPlan", () => {
@@ -39,28 +40,33 @@ describe("reservation", () => {
   });
   describe("parseSeatLocation", () => {
     it("returns the seat location", () => {
+      const seatingPlan = initSeatingPlan({ rows: 3, columns: 11 });
       const input = "R1C1";
       const expected = [0, 0];
-      const actual = parseSeatLocation(input);
+      const actual = parseSeatLocation(input, seatingPlan);
       expect(actual).toEqual(expected);
     });
     it("returns the seat location large numbers", () => {
+      const seatingPlan = initSeatingPlan({ rows: 2000, columns: 2000 });
       const input = "R1001C1005";
       const expected = [1000, 1004];
-      const actual = parseSeatLocation(input);
+      const actual = parseSeatLocation(input, seatingPlan);
       expect(actual).toEqual(expected);
     });
     it("throws an error with input as zero", () => {
+      const seatingPlan = initSeatingPlan({ rows: 3, columns: 11 });
       const input = "R0C0";
-      expect(() => parseSeatLocation(input)).toThrow();
+      expect(() => parseSeatLocation(input, seatingPlan)).toThrow();
     });
     it("throws an error for invalid input", () => {
+      const seatingPlan = initSeatingPlan({ rows: 3, columns: 11 });
       const input = "R1C";
-      expect(() => parseSeatLocation(input)).toThrow();
+      expect(() => parseSeatLocation(input, seatingPlan)).toThrow();
     });
     it("throws an error for invalid input 2", () => {
+      const seatingPlan = initSeatingPlan({ rows: 3, columns: 11 });
       const input = "R1C1A";
-      expect(() => parseSeatLocation(input)).toThrow();
+      expect(() => parseSeatLocation(input, seatingPlan)).toThrow();
     });
   });
   describe("isSeatAvailable", () => {
