@@ -276,10 +276,8 @@ export const findBestSeatRange = (
 ): SeatRange => {
   const begin = start();
   let ticks = 0;
-  let possibleRanges: SeatRange[] = findAllPossibleSeatRanges(
-    seatingPlan,
-    amountOfSeats,
-  );
+
+  const possibleRanges = findAllPossibleSeatRanges(seatingPlan, amountOfSeats);
 
   if (possibleRanges.length === 0) {
     throw new Error("No possible ranges found: " + amountOfSeats.toString());
@@ -287,7 +285,23 @@ export const findBestSeatRange = (
 
   const bestRange = possibleRanges.reduce((best, curr) => {
     ticks++;
-    return (curr.score ?? Infinity) < (best.score ?? Infinity) ? curr : best;
+    const bestScore = best.score ?? Infinity;
+    const currScore = curr.score ?? Infinity;
+
+    if (currScore < bestScore) {
+      return curr;
+    }
+
+    // break ties prefer top row
+    if (currScore === bestScore) {
+      const currRow = curr.start[0];
+      const bestRow = best.start[0];
+      if (currRow < bestRow) {
+        return curr;
+      }
+    }
+
+    return best;
   });
 
   const finish = end(begin);
@@ -295,5 +309,6 @@ export const findBestSeatRange = (
     ticks,
     time: `${finish[0]} s, ${finish[1]} ms`,
   });
+
   return bestRange;
 };
