@@ -15,7 +15,7 @@ import {
   SeatLocation,
   SeatMapConfig,
   SeatRange,
-} from "./reservation";
+} from "./seatly";
 import * as sea from "node:sea";
 
 describe("reservation", () => {
@@ -488,4 +488,5 @@ describe("reservation", () => {
       );
     });
   });
+  describe("seatly", () => {});
 });

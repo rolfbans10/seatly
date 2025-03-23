@@ -1,5 +1,6 @@
 import logger from "./logger";
 import { end, start } from "./benchmark";
+import { cliOptions } from "./cli-options";
 
 export interface SeatingPlan {
   config: SeatMapConfig;
@@ -322,4 +323,39 @@ export const findBestSeatRange = (
   });
 
   return bestRange;
+};
+
+export const Seatly = (lines: string[]): string[] => {
+  const { rows, columns } = cliOptions;
+  let seatingPlan = initSeatingPlan({ rows, columns });
+  const reservedLine = lines.shift()?.trim();
+  if (reservedLine) {
+    try {
+      const reservedSeats = reservedLine.split(" ");
+      seatingPlan = handleInitialReservations(seatingPlan, reservedSeats ?? []);
+    } catch (e) {
+      logger.log("Failed to handle initial reservations: " + reservedLine);
+      logger.log(e as Error);
+    }
+  }
+  const requests = lines.map((line) => line.trim());
+  const output: string[] = [];
+  for (const inputAmount of requests) {
+    try {
+      const amount = parseInt(inputAmount, 10);
+      if (Number.isNaN(amount)) {
+        output.push("Not Available");
+        logger.log("Invalid input: " + inputAmount);
+        continue;
+      }
+      const bestRange = findBestSeatRange(seatingPlan, amount);
+      seatingPlan = reserveRange(seatingPlan, bestRange);
+      output.push(getSeatRangeInStringFormat(bestRange));
+    } catch (e) {
+      output.push("Not Available");
+      logger.log("Not Available: " + inputAmount);
+      logger.log(e as Error);
+    }
+  }
+  return output;
 };
