@@ -214,25 +214,25 @@ describe("reservation", () => {
     it("returns the top center location", () => {
       const seatingPlan = initSeatingPlan({ rows: 3, columns: 11 });
       const expected: SeatLocation = [0, 5];
-      const actual = getTopCenterLocation(seatingPlan);
+      const actual = getTopCenterLocation(seatingPlan.config);
       expect(actual).toEqual(expected);
     });
     it("returns the top center location 2", () => {
       const seatingPlan = initSeatingPlan({ rows: 900, columns: 999 });
       const expected: SeatLocation = [0, 499];
-      const actual = getTopCenterLocation(seatingPlan);
+      const actual = getTopCenterLocation(seatingPlan.config);
       expect(actual).toEqual(expected);
     });
     it("returns the top center location 3", () => {
       const seatingPlan = initSeatingPlan({ rows: 900, columns: 12345 });
       const expected: SeatLocation = [0, 6172];
-      const actual = getTopCenterLocation(seatingPlan);
+      const actual = getTopCenterLocation(seatingPlan.config);
       expect(actual).toEqual(expected);
     });
     it("returns the top center location 4", () => {
       const seatingPlan = initSeatingPlan({ rows: 900, columns: 3 });
       const expected: SeatLocation = [0, 1];
-      const actual = getTopCenterLocation(seatingPlan);
+      const actual = getTopCenterLocation(seatingPlan.config);
       expect(actual).toEqual(expected);
     });
   });

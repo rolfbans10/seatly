@@ -4,6 +4,7 @@ import { end, start } from "./benchmark";
 export interface SeatingPlan {
   config: SeatMapConfig;
   seatMap: SeatMap;
+  center: SeatLocation;
 }
 
 type SeatMap = Map<number, boolean[]>;
@@ -16,6 +17,10 @@ export interface SeatMapConfig {
 const defaultConfig: SeatMapConfig = {
   rows: 3,
   columns: 11,
+};
+
+export const getTopCenterLocation = (config: SeatMapConfig): SeatLocation => {
+  return [0, Math.round(config.columns / 2) - 1];
 };
 
 export const initSeatingPlan = (
@@ -36,9 +41,11 @@ export const initSeatingPlan = (
   for (let row = 0; row < config.rows; row++) {
     seatMap.set(row, new Array(config.columns).fill(false));
   }
+
   return {
     config,
     seatMap,
+    center: getTopCenterLocation(config),
   };
 };
 
@@ -149,6 +156,9 @@ export const reserveRange = (
   seatingPlan: SeatingPlan,
   range: SeatRange,
 ): SeatingPlan => {
+  if (range.start[0] !== range.end[0]) {
+    throw new Error("Only single-row ranges are supported.");
+  }
   if (range.start[0] > range.end[0] || range.start[1] > range.end[1]) {
     throw new Error("Invalid range: " + JSON.stringify(range));
   }
@@ -194,12 +204,6 @@ export const getManhattanDistance = (
   return Math.floor(Math.abs(row1 - row2) + Math.abs(column1 - column2));
 };
 
-export const getTopCenterLocation = (
-  seatingPlan: SeatingPlan,
-): SeatLocation => {
-  return [0, Math.round(seatingPlan.config.columns / 2) - 1];
-};
-
 export const getSeatRangeInStringFormat = (range: SeatRange): string => {
   if (range.start[0] === range.end[0] && range.start[1] === range.end[1]) {
     return `R${range.start[0] + 1}C${range.start[1] + 1}`;
@@ -219,14 +223,19 @@ export const findAllPossibleSeatRanges = (
   amountOfSeats: number,
 ): SeatRange[] => {
   const begin = start();
-  const topCenter = getTopCenterLocation(seatingPlan);
+  const topCenter = seatingPlan.center;
   const seatRanges: SeatRange[] = [];
   const { seatMap, config } = seatingPlan;
   let ticks = 0;
   for (let rowId = 0; rowId < config.rows; rowId++) {
     const row = seatMap.get(rowId);
     if (!row) continue;
-    for (let columnId = 0; columnId < config.columns; columnId++) {
+    if (row.every((seat) => seat)) continue;
+    for (
+      let columnId = 0;
+      columnId <= config.columns - amountOfSeats;
+      columnId++
+    ) {
       ticks++;
       let isAvailable = true;
       for (let offset = 0; offset < amountOfSeats; offset++) {
@@ -276,11 +285,9 @@ export const findBestSeatRange = (
     throw new Error("No possible ranges found: " + amountOfSeats.toString());
   }
 
-  possibleRanges = possibleRanges.sort((a, b) => {
+  const bestRange = possibleRanges.reduce((best, curr) => {
     ticks++;
-    const scoreA = a.score !== undefined ? a.score : Number.MAX_SAFE_INTEGER;
-    const scoreB = b.score !== undefined ? b.score : Number.MAX_SAFE_INTEGER;
-    return scoreA - scoreB;
+    return (curr.score ?? Infinity) < (best.score ?? Infinity) ? curr : best;
   });
 
   const finish = end(begin);
@@ -288,5 +295,5 @@ export const findBestSeatRange = (
     ticks,
     time: `${finish[0]} s, ${finish[1]} ms`,
   });
-  return possibleRanges[0];
+  return bestRange;
 };
