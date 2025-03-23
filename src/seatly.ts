@@ -291,19 +291,27 @@ export const findAllPossibleSeatRanges = (
         }
       }
       if (isAvailable) {
-        seatRanges.push({
+        let range: SeatRange = {
           start: [rowId, columnId],
           end: [rowId, columnId + amountOfSeats - 1],
-        });
+        };
+        range.output = getSeatRangeInStringFormat(range);
+        range.center = getCenterFromRange(range);
+        range.score = 0;
+        for (let i = 0; i < amountOfSeats; i++) {
+          const distance = getManhattanDistance(topCenter, [
+            rowId,
+            columnId + i,
+          ]);
+          range.score += distance;
+        }
+        seatRanges.push(range);
       }
     }
   }
 
   for (let range of seatRanges) {
     ticks++;
-    range.output = getSeatRangeInStringFormat(range);
-    range.center = getCenterFromRange(range);
-    range.score = getManhattanDistance(topCenter, range.center);
   }
   const finish = end(begin);
   logger.log("findAllPossibleSeatRanges", {

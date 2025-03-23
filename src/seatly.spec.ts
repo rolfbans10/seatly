@@ -322,7 +322,7 @@ describe("reservation", () => {
           output: "R1C1 - R1C3",
           start: [0, 0],
           end: [0, 2],
-          score: 0,
+          score: 2,
         },
       ];
       expect(seatRanges).toEqual(expected);
@@ -336,7 +336,7 @@ describe("reservation", () => {
           output: "R1C1 - R1C2",
           start: [0, 0],
           end: [0, 1],
-          score: 0,
+          score: 1,
         },
         {
           center: [0, 2],
@@ -377,7 +377,7 @@ describe("reservation", () => {
           output: "R2C1 - R2C4",
           start: [1, 0],
           end: [1, 3],
-          score: 2,
+          score: 10,
         },
       ];
       expect(seatRanges).toEqual(expected);
@@ -550,6 +550,11 @@ describe("reservation", () => {
         "R2C3",
         "2",
       ]);
+    });
+    it("should consider the true center", () => {
+      const input = ["", "2", "2"];
+      const output = Seatly(input, { rows: 2, columns: 4 });
+      expect(output).toEqual(["R1C2 - R1C3", "R2C2 - R2C3", "4"]);
     });
   });
 });
