@@ -7,6 +7,7 @@ import {
   reserveRange,
 } from "./reservation";
 import Logger from "./logger";
+import { cliOptions } from "./cli-options";
 
 const lines: string[] = [];
 
@@ -19,12 +20,16 @@ const rl = readline.createInterface({
 rl.on("line", (line) => lines.push(line));
 rl.on("close", () => {
   const execStart = process.hrtime();
-  const logger = new Logger({ logStackTraces: true });
+  const logger = new Logger({
+    logStackTraces: false,
+    logFile: cliOptions.logFile,
+  });
   if (lines.length < 1) {
     logger.log("No Input provided.");
     return;
   }
-  let seatingPlan = initSeatingPlan();
+  const { rows, columns } = cliOptions;
+  let seatingPlan = initSeatingPlan({ rows, columns });
   const reservedLine = lines.shift()?.trim();
   if (reservedLine) {
     try {

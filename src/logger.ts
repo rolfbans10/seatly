@@ -71,7 +71,9 @@ export default class Logger {
       } catch (e) {
         message += `\ncontext:\nfailed to stringify context: \n${
           e instanceof Error
-            ? `name: ${e.name}\nmessage: ${e.message}\nstack: ${e.stack}\n`
+            ? `name: ${e.name}\n
+               message: ${e.message}\n
+               ${this.logStackTraces ? `stack: \n${e.stack}` : ""}\n`
             : "unknown error\n"
         }`;
       }

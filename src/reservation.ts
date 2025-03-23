@@ -1,5 +1,3 @@
-import * as sea from "node:sea";
-
 export interface SeatingPlan {
   config: SeatMapConfig;
   seatMap: SeatMap;
@@ -18,10 +16,19 @@ const defaultConfig: SeatMapConfig = {
 };
 
 export const initSeatingPlan = (
-  config: SeatMapConfig = defaultConfig,
+  configInput?: Partial<SeatMapConfig>,
 ): SeatingPlan => {
+  const config = { ...defaultConfig };
+  if (configInput) {
+    if (configInput.rows) config.rows = configInput.rows;
+    if (configInput.columns) config.columns = configInput.columns;
+  }
+  console.log("CONFIG: ", config);
   if (config.rows < 1 || config.columns < 1) {
-    throw new Error("Invalid config: " + JSON.stringify(config));
+    throw new Error(
+      "Invalid config, neither rows or columns can be less than 1: " +
+        JSON.stringify(config),
+    );
   }
   const seatMap = new Map<number, boolean[]>();
   for (let row = 0; row < config.rows; row++) {
