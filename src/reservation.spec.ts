@@ -249,6 +249,15 @@ describe("reservation", () => {
       const actual = getSeatRangeInStringFormat(range);
       expect(actual).toEqual(expected);
     });
+    it("returns the correct format if range is only one seat", () => {
+      const range: SeatRange = {
+        start: [0, 0],
+        end: [0, 0],
+      };
+      const expected = "R1C1";
+      const actual = getSeatRangeInStringFormat(range);
+      expect(actual).toEqual(expected);
+    });
   });
   describe("getCenterFromRange", () => {
     it("returns the center of the range", () => {

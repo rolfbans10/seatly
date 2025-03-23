@@ -21,17 +21,16 @@ export default class Logger {
     enabled = true,
     logStackTraces = false,
   }) {
-    console.log({
+    this.id = id;
+    this.logFile = logFile;
+    this.enabled = enabled;
+    this.logStackTraces = logStackTraces;
+    this.log("Logger created: ", {
       id,
       logFile,
       enabled,
       logStackTraces,
     });
-    this.id = id;
-    this.logFile = logFile;
-    this.enabled = enabled;
-    this.logStackTraces = logStackTraces;
-    this.log("Logger created");
   }
 
   public log(errorOrString: Error | string, data?: object) {
@@ -52,7 +51,7 @@ export default class Logger {
       };
     }
     this._log(message, data);
-    if (isError) {
+    if (isError && this.logStackTraces) {
       this._log(`STACK TRACE: \n${errorOrString.stack}`);
     }
   }

@@ -135,6 +135,9 @@ export const getTopCenterLocation = (
 };
 
 export const getSeatRangeInStringFormat = (range: SeatRange): string => {
+  if (range.start[0] === range.end[0] && range.start[1] === range.end[1]) {
+    return `R${range.start[0] + 1}C${range.start[1] + 1}`;
+  }
   return `R${range.start[0] + 1}C${range.start[1] + 1} - R${range.end[0] + 1}C${range.end[1] + 1}`;
 };
 

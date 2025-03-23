@@ -35,16 +35,22 @@ rl.on("close", () => {
       logger.log(e as Error);
     }
   }
-  const requests = lines.map((line) => parseInt(line.trim()));
+  const requests = lines.map((line) => line.trim());
   const output: string[] = [];
-  for (const amount of requests) {
+  for (const inputAmount of requests) {
     try {
+      const amount = parseInt(inputAmount, 10);
+      if (Number.isNaN(amount)) {
+        output.push("Not Available");
+        logger.log("Invalid input: " + inputAmount);
+        continue;
+      }
       const bestRange = findBestSeatRange(seatingPlan, amount);
       reserveRange(seatingPlan, bestRange);
       output.push(getSeatRangeInStringFormat(bestRange));
     } catch (e) {
       output.push("Not Available");
-      logger.log("Not Available: " + amount);
+      logger.log("Not Available: " + inputAmount);
       logger.log(e as Error);
     }
   }
