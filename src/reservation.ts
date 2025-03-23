@@ -105,6 +105,15 @@ const validateSeatLocation = (
   }
 };
 
+const validateSeatRange = (range: SeatRange) => {
+  if (range.start[0] !== range.end[0]) {
+    throw new Error("Only single-row ranges are supported.");
+  }
+  if (range.start[0] > range.end[0] || range.start[1] > range.end[1]) {
+    throw new Error("Invalid range: " + JSON.stringify(range));
+  }
+};
+
 export const parseSeatLocation = (
   input: string,
   seatingPlan: SeatingPlan,
@@ -138,53 +147,55 @@ export const reserveSeat = (
   seatingPlan: SeatingPlan,
   location: SeatLocation,
 ): SeatingPlan => {
-  const isAvailable = isSeatAvailable(seatingPlan, location);
-  if (!isAvailable) {
+  const { seatMap, config, center } = seatingPlan;
+  const [rowId, columnId] = location;
+
+  if (!isSeatAvailable(seatingPlan, location)) {
     throw new Error("Seat is not available: " + location.toString());
   }
-  const { seatMap } = seatingPlan;
-  const [rowId, columnId] = location;
-  const row = seatMap.get(rowId);
-  if (!row) {
+
+  const oldRow = seatMap.get(rowId);
+  if (!oldRow) {
     throw new Error("Row not found: " + rowId.toString());
   }
-  row[columnId] = true;
-  return seatingPlan;
+
+  const newRow = [...oldRow];
+  newRow[columnId] = true;
+
+  const newSeatMap = new Map(seatMap);
+  newSeatMap.set(rowId, newRow);
+
+  return { config, seatMap: newSeatMap, center };
 };
 
 export const reserveRange = (
   seatingPlan: SeatingPlan,
   range: SeatRange,
 ): SeatingPlan => {
-  if (range.start[0] !== range.end[0]) {
-    throw new Error("Only single-row ranges are supported.");
+  validateSeatRange(range);
+
+  let newPlan = seatingPlan;
+  for (let j = range.start[1]; j <= range.end[1]; j++) {
+    newPlan = reserveSeat(newPlan, [range.start[0], j]);
   }
-  if (range.start[0] > range.end[0] || range.start[1] > range.end[1]) {
-    throw new Error("Invalid range: " + JSON.stringify(range));
-  }
-  for (let i = range.start[0]; i <= range.end[0]; i++) {
-    for (let j = range.start[1]; j <= range.end[1]; j++) {
-      seatingPlan = reserveSeat(seatingPlan, [i, j]);
-    }
-  }
-  return seatingPlan;
+  return newPlan;
 };
 
 export const handleInitialReservations = (
   seatingPlan: SeatingPlan,
   initialReservations: string[],
 ): SeatingPlan => {
-  const initialLocations = initialReservations.map((reservation) =>
-    parseSeatLocation(reservation, seatingPlan),
-  );
-  for (let location of initialLocations) {
-    if (isSeatAvailable(seatingPlan, location)) {
-      seatingPlan = reserveSeat(seatingPlan, location);
-    } else {
+  let currentPlan = seatingPlan;
+
+  for (const reservation of initialReservations) {
+    const location = parseSeatLocation(reservation, currentPlan);
+    if (!isSeatAvailable(currentPlan, location)) {
       throw new Error("Seat was already reserved: " + location.toString());
     }
+    currentPlan = reserveSeat(currentPlan, location);
   }
-  return seatingPlan;
+
+  return currentPlan;
 };
 
 export interface SeatRange {
