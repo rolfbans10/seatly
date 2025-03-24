@@ -26,15 +26,15 @@ type TopCenterLocation =
 
 /**
  * When picking the center spot we need to account whether the amount of columns
- * are even or uneven, if they are uneven, we can pick only one seat as the center
- * and when they are uneven, we need to pick the two seats at the center to really
+ * are odd or even, if they are odd, we can pick only one seat as the center
+ * and when they are even, we need to pick the two seats at the center to really
  * distribute reservations evenly at the center.
  * @param config
  */
 export const getTopCenterLocation = (
   config: SeatMapConfig,
 ): TopCenterLocation => {
-  // uneven
+  //odd
   if (config.columns % 2 === 1) {
     return [0, Math.round(config.columns / 2) - 1];
   }
