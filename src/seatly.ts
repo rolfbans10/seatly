@@ -324,7 +324,7 @@ export const findAllPossibleSeatRanges = (
          * Initially I calculated the center of the range to try to center reservations as much as possible.
          * This kind of worked, but was not precise enough; Sometimes picking other ranges when there was an
          * obvious better location (usually just off by one seat). This was the same predicament of having
-         * even number reservations. To fix this, I decided that all the seats mattered, so now we have a score
+         * even number seating columns. To fix this, I decided that all the seats mattered equally, so now we have a score
          * calculation instead of a distance calculation, which is just basically the sum of the distances
          * of each reservation seat to the center. This gave all the seats equal priority causing it to naturally
          * find the most centered location for all the seats.
