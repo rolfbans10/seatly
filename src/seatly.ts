@@ -1,4 +1,4 @@
-import logger from "./logger";
+import fileLogger from "./file-logger";
 import { end, start } from "./benchmark";
 import { CliOptionsOutput, getCliOptions } from "./cli-options";
 
@@ -24,6 +24,13 @@ type TopCenterLocation =
   | [number, number]
   | [[number, number], [number, number]];
 
+/**
+ * When picking the center spot we need to account whether the amount of columns
+ * are even or uneven, if they are uneven, we can pick only one seat as the center
+ * and when they are uneven, we need to pick the two seats at the center to really
+ * distribute reservations evenly at the center.
+ * @param config
+ */
 export const getTopCenterLocation = (
   config: SeatMapConfig,
 ): TopCenterLocation => {
@@ -196,6 +203,13 @@ export const reserveRange = (
   return newPlan;
 };
 
+/**
+ * When thinking about this function and how it should behave,
+ * my opinion is that if the initial input is already wrong,
+ * we might as well abort the entire operation, since the reserved seats
+ * are arguably more important to the event organizer so that they don't get
+ * sold to other people who are trying to make reservations.
+ */
 export const handleInitialReservations = (
   seatingPlan: SeatingPlan,
   initialReservations: string[],
@@ -222,6 +236,10 @@ export const getManhattanDistance = (
   location1: SeatLocation | TopCenterLocation,
   location2: SeatLocation,
 ): number => {
+  /**
+   * If the center is composed of 2 squares (even seatMap), we calculate the distance
+   * to both, and return the smallest of the two.
+   */
   if (Array.isArray(location1[0]) && Array.isArray(location1[1])) {
     const [left, right] = location1;
     const [leftRow, leftColumn] = left;
@@ -256,13 +274,18 @@ export const getSeatRangeInStringFormat = (range: SeatRange): string => {
   return `R${range.start[0] + 1}C${range.start[1] + 1} - R${range.end[0] + 1}C${range.end[1] + 1}`;
 };
 
-export const getCenterFromRange = (range: SeatRange): SeatLocation => {
-  return [
-    Math.round((range.start[0] + range.end[0]) / 2),
-    Math.round((range.start[1] + range.end[1]) / 2),
-  ];
-};
-
+/**
+ * Optimization #2
+ * Originally a pure brute force algorithm, this was refactored to use
+ * the Window technique, decreasing the amount of iterations needed. (Still brute forcing it lol)
+ *
+ * Todo:
+ * Add more optimizations. I'm sure given enough time, I can think of
+ * a better way of doing this, until then this will have to do. I did took a stab
+ * at optimizing it a few times, but anything I tried wasn't really working well for some edge cases
+ * so I decided for the sake of getting things working correctly and given the limited amount of time,
+ * to keep it as it is.
+ */
 export const findAllPossibleSeatRanges = (
   seatingPlan: SeatingPlan,
   amountOfSeats: number,
@@ -296,9 +319,18 @@ export const findAllPossibleSeatRanges = (
           end: [rowId, columnId + amountOfSeats - 1],
         };
         range.output = getSeatRangeInStringFormat(range);
-        range.center = getCenterFromRange(range);
         range.score = 0;
+        /**
+         * Initially I calculated the center of the range to try to center reservations as much as possible.
+         * This kind of worked, but was not precise enough; Sometimes picking other ranges when there was an
+         * obvious better location (usually just off by one seat). This was the same predicament of having
+         * even number reservations. To fix this, I decided that all the seats mattered, so now we have a score
+         * calculation instead of a distance calculation, which is just basically the sum of the distances
+         * of each reservation seat to the center. This gave all the seats equal priority causing it to naturally
+         * find the most centered location for all the seats.
+         */
         for (let i = 0; i < amountOfSeats; i++) {
+          ticks++;
           const distance = getManhattanDistance(topCenter, [
             rowId,
             columnId + i,
@@ -310,11 +342,8 @@ export const findAllPossibleSeatRanges = (
     }
   }
 
-  for (let range of seatRanges) {
-    ticks++;
-  }
   const finish = end(begin);
-  logger.log("findAllPossibleSeatRanges", {
+  fileLogger.log("findAllPossibleSeatRanges", {
     ticks,
     seatRangesFound: seatRanges.length,
     time: `${finish[0]} s, ${finish[1]} ms`,
@@ -336,6 +365,18 @@ export const findBestSeatRange = (
     throw new Error("No possible ranges found: " + amountOfSeats.toString());
   }
 
+  /**
+   * Optimization #1
+   * Initially this was just a sort, but was refactored to use a reduce function,
+   * which only needs to iterate once through the available ranges to get the range
+   * with the lowest distance.
+   *
+   * Improvement:
+   * After some testing, I think the user would rather be on the closest seat
+   * to the front of the event, even if another seat on the row behind has the same distance,
+   * so this was refactored to prefer front row seats that have the same distance from the
+   * center as the one behind the center.
+   */
   const bestRange = possibleRanges.reduce((best, curr) => {
     ticks++;
     const bestScore = best.score ?? Infinity;
@@ -358,7 +399,7 @@ export const findBestSeatRange = (
   });
 
   const finish = end(begin);
-  logger.log("findBestSeatRange", {
+  fileLogger.log("findBestSeatRange", {
     ticks,
     time: `${finish[0]} s, ${finish[1]} ms`,
   });
@@ -366,13 +407,18 @@ export const findBestSeatRange = (
   return bestRange;
 };
 
+/**
+ * Todo: Optimization Refactor
+ * Instead of iterating trough the entire seatMap, we could
+ * store counters that keep track of available seats per row
+ * and we just need to add those up at the end.
+ */
 export const getAvailableSeatCount = (seatingPlan: SeatingPlan): number => {
   const { seatMap, config } = seatingPlan;
   let count = 0;
   for (let rowId = 0; rowId < config.rows; rowId++) {
     const row = seatMap.get(rowId);
     if (!row) continue;
-    if (row.every((seat) => seat)) continue;
     for (let columnId = 0; columnId < config.columns; columnId++) {
       if (!row[columnId]) count++;
     }
@@ -380,6 +426,11 @@ export const getAvailableSeatCount = (seatingPlan: SeatingPlan): number => {
   return count;
 };
 
+/**
+ * This is the main function, it accepts an cliOverrides parameter
+ * that is used mostly on the unit tests to test for different
+ * seatMap sizes, and other things.
+ */
 export const Seatly = (
   lines: string[],
   cliOverrides?: Partial<CliOptionsOutput>,
@@ -392,8 +443,8 @@ export const Seatly = (
       const reservedSeats = reservedLine.split(" ");
       seatingPlan = handleInitialReservations(seatingPlan, reservedSeats ?? []);
     } catch (e) {
-      logger.log("Failed to handle initial reservations: " + reservedLine);
-      logger.log(e as Error);
+      fileLogger.log("Failed to handle initial reservations: " + reservedLine);
+      fileLogger.log(e as Error);
     }
   }
   const requests = lines.map((line) => line.trim());
@@ -403,7 +454,7 @@ export const Seatly = (
       const amount = parseInt(inputAmount, 10);
       if (Number.isNaN(amount)) {
         output.push("Not Available");
-        logger.log("Invalid input: " + inputAmount);
+        fileLogger.log("Invalid input: " + inputAmount);
         continue;
       }
       const bestRange = findBestSeatRange(seatingPlan, amount);
@@ -411,8 +462,8 @@ export const Seatly = (
       output.push(getSeatRangeInStringFormat(bestRange));
     } catch (e) {
       output.push("Not Available");
-      logger.log("Not Available: " + inputAmount);
-      logger.log(e as Error);
+      fileLogger.log("Not Available: " + inputAmount);
+      fileLogger.log(e as Error);
     }
   }
   output.push(getAvailableSeatCount(seatingPlan).toString());

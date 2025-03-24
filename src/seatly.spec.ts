@@ -1,7 +1,6 @@
 import {
   findAllPossibleSeatRanges,
   findBestSeatRange,
-  getCenterFromRange,
   getManhattanDistance,
   getSeatRangeInStringFormat,
   getTopCenterLocation,
@@ -265,60 +264,12 @@ describe("reservation", () => {
       expect(actual).toEqual(expected);
     });
   });
-  describe("getCenterFromRange", () => {
-    it("returns the center of the range", () => {
-      const range: SeatRange = {
-        start: [0, 0],
-        end: [0, 2],
-      };
-      const expected: SeatLocation = [0, 1];
-      const actual = getCenterFromRange(range);
-      expect(actual).toEqual(expected);
-    });
-    it("returns the center of the range 2", () => {
-      const range: SeatRange = {
-        start: [3, 5],
-        end: [3, 8],
-      };
-      const expected: SeatLocation = [3, 7];
-      const actual = getCenterFromRange(range);
-      expect(actual).toEqual(expected);
-    });
-    it("returns the center of the range 3", () => {
-      const range: SeatRange = {
-        start: [0, 0],
-        end: [0, 1],
-      };
-      const expected: SeatLocation = [0, 1];
-      const actual = getCenterFromRange(range);
-      expect(actual).toEqual(expected);
-    });
-    it("returns the center of the range 4", () => {
-      const range: SeatRange = {
-        start: [0, 0],
-        end: [0, 0],
-      };
-      const expected: SeatLocation = [0, 0];
-      const actual = getCenterFromRange(range);
-      expect(actual).toEqual(expected);
-    });
-    it("returns the center of the range 5", () => {
-      const range: SeatRange = {
-        start: [0, 0],
-        end: [0, 10],
-      };
-      const expected: SeatLocation = [0, 5];
-      const actual = getCenterFromRange(range);
-      expect(actual).toEqual(expected);
-    });
-  });
   describe("findAllPossibleSeatRanges", () => {
     it("returns all possible seat ranges", () => {
       const seatingPlan = initSeatingPlan({ rows: 1, columns: 3 });
       const seatRanges: SeatRange[] = findAllPossibleSeatRanges(seatingPlan, 3);
       const expected: SeatRange[] = [
         {
-          center: [0, 1],
           output: "R1C1 - R1C3",
           start: [0, 0],
           end: [0, 2],
@@ -332,14 +283,12 @@ describe("reservation", () => {
       const seatRanges: SeatRange[] = findAllPossibleSeatRanges(seatingPlan, 2);
       const expected: SeatRange[] = [
         {
-          center: [0, 1],
           output: "R1C1 - R1C2",
           start: [0, 0],
           end: [0, 1],
           score: 1,
         },
         {
-          center: [0, 2],
           output: "R1C2 - R1C3",
           start: [0, 1],
           end: [0, 2],
@@ -373,7 +322,6 @@ describe("reservation", () => {
       const seatRanges: SeatRange[] = findAllPossibleSeatRanges(seatingPlan, 4);
       const expected: SeatRange[] = [
         {
-          center: [1, 2],
           output: "R2C1 - R2C4",
           start: [1, 0],
           end: [1, 3],

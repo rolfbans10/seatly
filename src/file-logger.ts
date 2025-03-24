@@ -2,25 +2,25 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { randomBytes } from "node:crypto";
 
-export interface LoggerOptions {
+export interface FileLoggerOptions {
   id?: string;
   logFile?: string;
   enabled?: boolean;
   logStackTraces?: boolean;
 }
 
-class Logger {
+class FileLogger {
   private id: string;
   private logFile: string;
   private enabled: boolean;
   private logStackTraces: boolean;
 
   constructor({
-    id = Logger.getRandomId(6),
+    id = FileLogger.getRandomId(6),
     logFile = "default",
     enabled = true,
     logStackTraces = false,
-  }) {
+  }: FileLoggerOptions) {
     this.id = id;
     this.logFile =
       logFile === "default"
@@ -61,7 +61,7 @@ class Logger {
     this.enabled = false;
   }
 
-  public applyConfig(config: LoggerOptions) {
+  public applyConfig(config: FileLoggerOptions) {
     this.id = config.id ?? this.id;
     this.logFile = config.logFile ?? this.logFile;
     this.enabled = config.enabled !== undefined ? config.enabled : this.enabled;
@@ -106,5 +106,5 @@ class Logger {
   }
 }
 // singleton
-const logger = new Logger({});
-export default logger;
+const fileLogger = new FileLogger({});
+export default fileLogger;
